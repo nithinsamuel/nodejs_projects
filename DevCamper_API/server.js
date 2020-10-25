@@ -11,7 +11,8 @@ connectDB();
 const bootcamps = require("./routes/bootcamps");
 // initialize app variable
 const app = express();
-
+// Body Parser
+app.use(express.json());
 //Dev logging middleware - morgan
 //run only in dev environment
 if (process.env.NODE_ENV === "development") {
