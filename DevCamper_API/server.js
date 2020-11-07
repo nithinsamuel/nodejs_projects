@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
+const errorHandler = require("./middleware/error");
 const colors = require("colors");
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
@@ -20,7 +21,8 @@ if (process.env.NODE_ENV === "development") {
 }
 // Mount Route to specific URL
 app.use("/api/v1/bootcamps", bootcamps);
-
+// If you want to use the error catcher middleware in the boot camps controller methods it has to be after this because Middlewares are executed in a linear order so it has to be after this if you
+app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 // in order to run a server we neeed to call listlsen passing a port no
 const server = app.listen(

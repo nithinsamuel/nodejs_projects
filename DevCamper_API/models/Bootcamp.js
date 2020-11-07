@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
+const geocoder = require("../utils/geocoder");
 const BootcampSchema = new mongoose.Schema({
   // we provide the name in object format so that the validation can be applied
   name: {
@@ -111,6 +113,39 @@ const BootcampSchema = new mongoose.Schema({
   //   ref: "User",
   //   required: true,
   // },
+});
+// create bootcamp slug from the name
+//we can use .pre to run before the operation or we can use .post to run the operation after the post
+// before we save the data we need to create the slug
+// we must pass in next and call next so the middleware will move to the next middleware
+BootcampSchema.pre("save", function (next) {
+  // we can access the field name using this.name
+  console.log("Slugify,ran", this.name);
+  // we assign a slug name to the slug:string in the schema
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
+// Geocode &create location field
+//Geocode method is async function so we must use.then or async/await
+BootcampSchema.pre("save", async function (next) {
+  // we can access any of the schema fields using .this
+  const loc = await geocoder.geocode(this.address);
+  // in order to use GeoJson point the type and coordinates are required fields
+  this.location = {
+    type: "Point",
+    // the received loc value contains lattitude and longitude as an array
+    //i.e. [{lattitude:00,longitude:01,country:'France',countryCode:'FR'}]
+    cooordinates: [loc[0].longitude, loc[0].lattitude],
+    formattedAddress: loc[0].formattedAddress,
+    street: loc[0].streetName,
+    city: loc[0].city,
+    state: loc[0].stateCode,
+    zipcode: loc[0].zipcode,
+    country: loc[0].countryCode,
+  };
+  // do not save address in db because we are getting the data in the geocode
+  this.address = undefined;
+  next();
 });
 // name of the model is Bootcamp
 module.exports = mongoose.model("Bootcamp", BootcampSchema);
