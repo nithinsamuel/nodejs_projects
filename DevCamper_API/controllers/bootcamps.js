@@ -12,8 +12,17 @@ const Bootcamp = require("../models/Bootcamp");
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
   console.log("req.query", req.query);
   let query;
-  // we create a new query string and add the "$" operator to the front because it becomes a mongoose operator
-  let queryStr = JSON.stringify(req.query);
+  // Copy of request.query
+  const reqQuery = { ...req.query };
+  console.log("reqQuery before remove", reqQuery);
+  // Fields to exclude
+  const removeFields = ["select", "sort", "page", "limit"];
+  // Loop over removeFields and delete them from reqQuery
+  removeFields.forEach((param) => delete reqQuery[param]);
+  console.log("reqQuery after remove", reqQuery);
+  // Create Query String
+  // we create a new query string and add the "$" operator to the front because it becomes a mongoose operator - create operators ($gt,$gte,etc)
+  let queryStr = JSON.stringify(reqQuery);
   // replace takes a regular expression
   // b - word boundary character,/ g is global
   // we will match for greater than greater than equal to and in is used for searching a list/array
@@ -23,14 +32,64 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     (match) => `$${match}`
   );
   console.log("queryStr", queryStr);
+  // Finding Resource
   query = Bootcamp.find(JSON.parse(queryStr));
+  // Select Fields
+  if (req.query.select) {
+    const fields = req.query.select.split(",").join(" ");
+    console.log("fields", fields); //select=name,description - name description
+    //query.select is a mongoose function for searching the mongo collection
+    query = query.select(fields);
+  }
+  // Sort
+  if (req.query.sort) {
+    const sortBy = req.query.sort.split(",").join(" ");
+    query = query.sort(sortBy);
+  } else {
+    // default sortBy date
+    query = query.sort("-createdAt");
+  }
+  // Pagination
+  // we want the page no as number parsint() second parameter radix as 10
+  //default page value is 1 if no values are passed
+  const page = parseInt(req.query.page, 10) || 1;
+  //limit displays the data per page
+  const limit = parseInt(req.query.limit, 10) || 1;
+  // startIndex - query .skip to skip a certain amount of resources/bootcamps
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  // total amount of documents
+  //.countDocuments() is a mongoose method used to count all the documents
+  const total = await Bootcamp.countDocuments();
+  //.query.skip(100).limit(20) - Specifies the number of documents to skip.
+  //this can be used to go to next page-it skips the said records
+  query = query.skip(startIndex).limit(limit);
+  // Executing our Query
   // return all bootcamps without any filters
   // const bootcamps = await Bootcamp.find();
   // return bootcamps with a filter search - averageCost[lte]=10000, averageCost[gt]=5000
   const bootcamps = await query;
-  res
-    .status(200)
-    .json({ success: true, count: bootcamps.length, data: bootcamps });
+  // Pagination Result
+  const pagination = {};
+  // if on first page don't show previous button, if on last page don't show the last button
+  if (endIndex < total) {
+    pagination.next = {
+      page: page + 1,
+      limit,
+    };
+  }
+  if (startIndex > 0) {
+    pagination.prev = {
+      page: page - 1,
+      limit,
+    };
+  }
+  res.status(200).json({
+    success: true,
+    count: bootcamps.length,
+    pagination,
+    data: bootcamps,
+  });
 });
 
 // @desc    GET single bootcamps

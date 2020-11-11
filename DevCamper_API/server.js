@@ -10,6 +10,7 @@ dotenv.config({ path: "./config/config.env" });
 connectDB();
 // Route Files from Express Router
 const bootcamps = require("./routes/bootcamps");
+const courses = require("./routes/courses");
 // initialize app variable
 const app = express();
 // Body Parser
@@ -21,6 +22,7 @@ if (process.env.NODE_ENV === "development") {
 }
 // Mount Route to specific URL
 app.use("/api/v1/bootcamps", bootcamps);
+app.use("/api/v1/courses", courses);
 // If you want to use the error catcher middleware in the boot camps controller methods it has to be after this because Middlewares are executed in a linear order so it has to be after this if you
 app.use(errorHandler);
 const PORT = process.env.PORT || 5000;

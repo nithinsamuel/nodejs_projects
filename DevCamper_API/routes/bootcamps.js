@@ -7,8 +7,16 @@ const {
   deleteBootcamp,
   getBootcampsInRadius,
 } = require("../controllers/bootcamps");
+// Include other resource routers
+//{{URL}}/api/v1/bootcamps/5d713a66ec8f2b88b8f830b8/courses
+const courseRouter = require("./courses");
+
 // initialize Router
 const router = express.Router();
+// re-route into other resource routers--pass it on to the course router
+//if this path is hit /:bootcampId/courses then getCourses route in courses.js is called
+router.use("/:bootcampId/courses", courseRouter);
+
 // router methods where id is not required
 //we chain similar route functions here
 // getting the bootcamps within a radius
