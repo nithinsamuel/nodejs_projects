@@ -14,12 +14,12 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
   let query;
   // Copy of request.query
   const reqQuery = { ...req.query };
-  console.log("reqQuery before remove", reqQuery);
+
   // Fields to exclude
   const removeFields = ["select", "sort", "page", "limit"];
   // Loop over removeFields and delete them from reqQuery
   removeFields.forEach((param) => delete reqQuery[param]);
-  console.log("reqQuery after remove", reqQuery);
+
   // Create Query String
   // we create a new query string and add the "$" operator to the front because it becomes a mongoose operator - create operators ($gt,$gte,etc)
   let queryStr = JSON.stringify(reqQuery);
@@ -33,7 +33,8 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
   );
   console.log("queryStr", queryStr);
   // Finding Resource
-  query = Bootcamp.find(JSON.parse(queryStr));
+  // we can do a reverse populate by adding the created virtual schema present in Bootcamp schema
+  query = Bootcamp.find(JSON.parse(queryStr)).populate("courses");
   // Select Fields
   if (req.query.select) {
     const fields = req.query.select.split(",").join(" ");
@@ -54,7 +55,7 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
   //default page value is 1 if no values are passed
   const page = parseInt(req.query.page, 10) || 1;
   //limit displays the data per page
-  const limit = parseInt(req.query.limit, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 100;
   // startIndex - query .skip to skip a certain amount of resources/bootcamps
   const startIndex = (page - 1) * limit;
   const endIndex = page * limit;
@@ -150,7 +151,7 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
 // @access  Private
 exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
   //first argument -req.params.id-- take id from url
-  const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id);
+  const bootcamp = await Bootcamp.findById(req.params.id);
   // if bootcamp does not exist return a success:false message
   if (!bootcamp) {
     // return res.status(400).json({ success: false });
@@ -159,6 +160,8 @@ exports.deleteBootcamp = asyncHandler(async (req, res, next) => {
       new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
     );
   }
+  // remove the bootcamp
+  bootcamp.remove();
   // return an empty object if data is deleted
   res.status(200).json({ success: true, data: {} });
 });
