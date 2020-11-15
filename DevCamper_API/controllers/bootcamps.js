@@ -1,3 +1,5 @@
+// path is a core node js module for dealing with file paths
+const path = require("path");
 const ErrorResponse = require("../utils/errorResponse");
 const asyncHandler = require("../middleware/async");
 // geocoder
@@ -10,7 +12,7 @@ const Bootcamp = require("../models/Bootcamp");
 // we can access the hello object from the request set in the logger middleware
 // we are using async and await because mongoose methods return a promise
 exports.getBootcamps = asyncHandler(async (req, res, next) => {
-  console.log("req.query", req.query);
+  // console.log("req.query", req.query);
   let query;
   // Copy of request.query
   const reqQuery = { ...req.query };
@@ -31,14 +33,14 @@ exports.getBootcamps = asyncHandler(async (req, res, next) => {
     /\b(gt|gte|lt|lte|in)\b/g,
     (match) => `$${match}`
   );
-  console.log("queryStr", queryStr);
+  // console.log("queryStr", queryStr);
   // Finding Resource
   // we can do a reverse populate by adding the created virtual schema present in Bootcamp schema
   query = Bootcamp.find(JSON.parse(queryStr)).populate("courses");
   // Select Fields
   if (req.query.select) {
     const fields = req.query.select.split(",").join(" ");
-    console.log("fields", fields); //select=name,description - name description
+    //console.log("fields", fields); //select=name,description - name description
     //query.select is a mongoose function for searching the mongo collection
     query = query.select(fields);
   }
@@ -185,4 +187,63 @@ exports.getBootcampsInRadius = asyncHandler(async (req, res, next) => {
   res
     .status(200)
     .json({ success: true, count: bootcamps.length, data: bootcamps });
+});
+// @desc    Upload photo for bootcamp
+// @route   PUT /api/v1/bootcamps/:id/photo
+// @access  Private
+exports.bootcampPhotoUpload = asyncHandler(async (req, res, next) => {
+  //find the bootcamp
+  //first argument -req.params.id-- take id from url
+  const bootcamp = await Bootcamp.findById(req.params.id);
+  // if bootcamp does not exist return a success:false message
+  if (!bootcamp) {
+    // return error using next
+    return next(
+      new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`, 404)
+    );
+  }
+  // check if any files have been uploaded
+  if (!req.files) {
+    return next(new ErrorResponse(`Please upload a file`, 400));
+  }
+  console.log(
+    "controllers--bootcamp.js-bootcampPhotoUpload--req.files",
+    req.files
+  );
+  const file = req.files.file;
+  // Make sure the image is a photo
+  // image alwasys starts with "image/" so if the mimetype does not start with image we can send aerror response
+  if (!file.mimetype.startsWith("image")) {
+    return next(new ErrorResponse(`Please upload an image file`, 400));
+  }
+  // check file size
+  if (file.size > process.env.MAX_FILE_UPLOAD) {
+    return next(
+      new ErrorResponse(
+        `Please upload an image less than ${process.env.MAX_FILE_UPLOAD}`,
+        400
+      )
+    );
+  }
+  // create custom file name so file won't be owerwritten if someone else also updates with same name
+  // we can get the extension of the existing file name by using path.parse.(FileName).ext
+  //we append the photo name with the bootcamp id with file extension alternatively we can also use the timestamp with file name
+  // console.log("Date.now", Date.now());
+  console.log("controllers--bootcamp.js--file.name", file.name);
+  file.name = `photo_${bootcamp._id}${path.parse(file.name).ext}`;
+  console.log("file.name", file.name);
+  // upload the file
+  // move the file to the upload path
+  file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
+    if (err) {
+      console.error(err);
+      return next(new ErrorResponse(`Problem with file upload`, 500));
+    }
+    // insert the photo to db and send back a response
+    await Bootcamp.findByIdAndUpdate(req.params.id, { photo: file.name });
+    res.status(200).json({
+      success: true,
+      data: file.name,
+    });
+  });
 });

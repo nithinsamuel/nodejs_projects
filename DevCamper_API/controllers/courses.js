@@ -56,13 +56,13 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
 // @route POST /api/v1/bootcamps/:bootcampId/courses -- the route path is same as route-1 in getCourses but we need to make a POST request
 // @access  Private -- only logged in user can access their route
 exports.addCourse = asyncHandler(async (req, res, next) => {
-  console.log("controller--addCourse-req.body", req.body);
+  // console.log("controller--addCourse-req.body", req.body);
   // submit this as a body fild because in our course model, bootcamp is an actual field
   // so we manually assign req.body.bootcamp from models/course.js to the param received so the id will be submitted in routes/courses.js
   req.body.bootcamp = req.params.bootcampId;
   //check if bootcamp exists
   const bootcamp = await Bootcamp.findById(req.params.bootcampId);
-  console.log("controller--addCourse--bootcamp", bootcamp);
+  // console.log("controller--addCourse--bootcamp", bootcamp);
   if (!bootcamp) {
     return next(
       new ErrorResponse(`No bootcamp with the id of ${req.params.bootcampId}`),
@@ -71,7 +71,7 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
   }
   // create course --
   //we are passing the req.body to create the course, the req.body contains anything sent from the body which will also include the bootcamp because we pulled it from the url and put it into req.body
-  console.log("addCourse--req.body", req.body);
+  // console.log("addCourse--req.body", req.body);
   const course = await Course.create(req.body);
   res.status(200).json({
     success: true,

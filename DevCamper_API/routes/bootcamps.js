@@ -6,11 +6,11 @@ const {
   updateBootcamp,
   deleteBootcamp,
   getBootcampsInRadius,
+  bootcampPhotoUpload,
 } = require("../controllers/bootcamps");
 // Include other resource routers
 //{{URL}}/api/v1/bootcamps/5d713a66ec8f2b88b8f830b8/courses
 const courseRouter = require("./courses");
-
 // initialize Router
 const router = express.Router();
 // re-route into other resource routers--pass it on to the course router
@@ -21,6 +21,8 @@ router.use("/:bootcampId/courses", courseRouter);
 //we chain similar route functions here
 // getting the bootcamps within a radius
 router.route("/radius/:zipcode/:distance").get(getBootcampsInRadius);
+// router for photo upload -- upload is a put request
+router.route("/:id/photo").put(bootcampPhotoUpload);
 router.route("/").get(getBootcamps).post(createBootcamp);
 // router methods where id is required
 router

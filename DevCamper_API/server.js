@@ -1,8 +1,12 @@
+// bring the path module
+const path = require("path");
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
 const errorHandler = require("./middleware/error");
+// express-fileupload
+const fileupload = require("express-fileupload");
 const colors = require("colors");
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
@@ -20,12 +24,18 @@ app.use(express.json());
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+// File uploading
+app.use(fileupload());
+// set the static folder
+//path.join-joins files and folders together
+//__dirname-current directory and go into public folder
+app.use(express.static(path.join(__dirname, "public")));
 // Mount Route to specific URL
 app.use("/api/v1/bootcamps", bootcamps);
 app.use("/api/v1/courses", courses);
 // If you want to use the error catcher middleware in the boot camps controller methods it has to be after this because Middlewares are executed in a linear order so it has to be after this if you
 app.use(errorHandler);
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 // in order to run a server we neeed to call listlsen passing a port no
 const server = app.listen(
   PORT,
