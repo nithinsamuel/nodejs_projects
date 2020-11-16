@@ -30,6 +30,7 @@ app.use(fileupload());
 //path.join-joins files and folders together
 //__dirname-current directory and go into public folder
 app.use(express.static(path.join(__dirname, "public")));
+console.log("__dirname", __dirname);
 // Mount Route to specific URL
 app.use("/api/v1/bootcamps", bootcamps);
 app.use("/api/v1/courses", courses);

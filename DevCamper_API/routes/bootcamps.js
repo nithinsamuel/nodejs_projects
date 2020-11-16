@@ -8,6 +8,10 @@ const {
   getBootcampsInRadius,
   bootcampPhotoUpload,
 } = require("../controllers/bootcamps");
+// get bootcamp model
+const Bootcamp = require("../models/Bootcamp");
+// use the advancedResults middleware for advanced search
+const advancedResults = require("../middleware/advancedResults");
 // Include other resource routers
 //{{URL}}/api/v1/bootcamps/5d713a66ec8f2b88b8f830b8/courses
 const courseRouter = require("./courses");
@@ -23,7 +27,12 @@ router.use("/:bootcampId/courses", courseRouter);
 router.route("/radius/:zipcode/:distance").get(getBootcampsInRadius);
 // router for photo upload -- upload is a put request
 router.route("/:id/photo").put(bootcampPhotoUpload);
-router.route("/").get(getBootcamps).post(createBootcamp);
+// wherever we want to use the advancedResults middleware we need to pass it in with the method,
+// we want to use advancedResults with getBootcamp -- it takes in the model and any populate
+router
+  .route("/")
+  .get(advancedResults(Bootcamp, "courses"), getBootcamps)
+  .post(createBootcamp);
 // router methods where id is required
 router
   .route("/:id")

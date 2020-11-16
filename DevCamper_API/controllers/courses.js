@@ -9,20 +9,17 @@ const Bootcamp = require("../models/Bootcamp");
 // @route-2   GET /api/v1/bootcamps/:bootcampId/courses--route will get all the specific courses for a specific bootcamp
 // @access  Public
 exports.getCourses = asyncHandler(async (req, res, next) => {
-  let query;
   if (req.params.bootcampId) {
     //   @route-1
-    query = Course.find({ bootcamp: req.params.bootcampId });
+    const courses = await Course.find({ bootcamp: req.params.bootcampId });
+    // we have a separate response because we won't use pagination when we search courses for a bootcamp, we display it only for all the courses
+    return res
+      .status(200)
+      .json({ success: true, count: courses.length, data: courses });
   } else {
     // @route-2
-    //using .populate we will add the bootcamp data to the courses
-    query = Course.find().populate({
-      path: "bootcamp",
-      select: "name description", //fields that we awant
-    });
+    res.status(200).json(res.advancedResults);
   }
-  const courses = await query;
-
   res.status(200).json({
     success: true,
     count: courses.length,
